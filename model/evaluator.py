@@ -26,6 +26,8 @@ def getKeywords(fp,numExtracted):
         numArticles = 1
         for i in range(len(allGroundText)):
             allGroundText[i] = re.sub('\n','',allGroundText[i])
+            allGroundText[i] = re.sub(f':\s[0-9](\.)*[0-9,\.]*','',allGroundText[i])
+            allGroundText[i] = allGroundText[i].lower()
         for i in range(len(allGroundText)):
             if f'article' in allGroundText[i]:
                 
@@ -35,14 +37,16 @@ def getKeywords(fp,numExtracted):
                     article.append(allGroundText[j])
                     j+=1
 
-                groundTruths=article
+                groundTruths.append(article)
                 numArticles  +=1
     return groundTruths
         
 
 
 def f1(precision,recall):
-    return 2/(1/recall+1/precision)
+    if precision!=0 and recall != 0:
+        return 2/(1/recall+1/precision)
+    return 0
 
 def main():
 
@@ -76,8 +80,11 @@ def main():
     allFScore = 0
     with open('../results/metrics.txt','w', encoding='utf-8') as metrics:
         for i in range(len(truthWords)):
+            
             truthArr = truthWords[i]
             modelArr = modelWords[i]
+            print(truthWords)
+            print(modelWords)
             pr = precision(modelArr,truthArr)
             rec = recall(modelArr,truthArr)
             fscore = f1(pr,rec)
