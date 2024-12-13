@@ -1,10 +1,16 @@
 import re
 
+def match(str1, arr):
+    for i in arr:
+        if str1 in i or i in str1:
+            return True
+    return False
+
 def precision(guess, groundTruth):
     truePos = 0
     falsePos = 0
     for i in range(len(guess)):
-        if guess[i] in groundTruth:
+        if match(guess[i], groundTruth):
             truePos +=1
         else:
             falsePos+=1
@@ -14,7 +20,7 @@ def recall(guess, groundTruth):
     truePos = 0
     falseNeg = 0
     for i in range(len(groundTruth)):
-        if groundTruth[i] in guess:
+        if match(groundTruth[i], guess):
             truePos +=1
         else:
             falseNeg +=1
@@ -26,16 +32,18 @@ def getKeywords(fp,numExtracted):
         numArticles = 1
         for i in range(len(allGroundText)):
             allGroundText[i] = re.sub('\n','',allGroundText[i])
-            allGroundText[i] = re.sub(f':\s[0-9](\.)*[0-9,\.]*','',allGroundText[i])
+            allGroundText[i] = re.sub(f':\s[0-9]*(\.)*[0-9,\.]*','',allGroundText[i])
             allGroundText[i] = allGroundText[i].lower()
         for i in range(len(allGroundText)):
             if f'article' in allGroundText[i]:
                 
                 j = i+1
+                print(allGroundText)
                 article = []
-                while j-i<numExtracted+1 and '' !=allGroundText[j]:
+                while j<len(allGroundText) and '' !=allGroundText[j]:
                     article.append(allGroundText[j])
                     j+=1
+                    print(j-i)
 
                 groundTruths.append(article)
                 numArticles  +=1
@@ -73,12 +81,12 @@ def main():
         print(groundTruths)
     """
     truthWords = getKeywords('../results/groundTruth.txt',15)
-    modelWords = getKeywords('../results/results2.txt',15)
+    modelWords = getKeywords('../results/results.txt',15)
 
     allPrecision = 0
     allRecall = 0
     allFScore = 0
-    with open('../results/metrics.txt','w', encoding='utf-8') as metrics:
+    with open('../results/metrics2.txt','w', encoding='utf-8') as metrics:
         for i in range(len(truthWords)):
             
             truthArr = truthWords[i]

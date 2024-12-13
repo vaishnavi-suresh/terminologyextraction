@@ -8,32 +8,46 @@ TO DO: remove stopwords
 """
 
 from gensim.models import Word2Vec
+from gensim.parsing.preprocessing import remove_stopwords
 import pke 
 import re
+
+import pke.unsupervised
 import dataCleaner as dc
 import string
 import nltk
 from nltk.corpus import stopwords
 from yake import KeywordExtractor
 import numpy as np
+import electionTerms
+
 
 class key:
     def __init__ (self):
-        self.np = r'(DET)?(JJR?S?)*(NNP?S?)+'
-        self.pn = r'(NNP)*'
-        self.vb = r'(VBD?G?N?P?Z?)'
-        self.jj = r'JJR?S?'
-        self.vp = r'(IN)?(RBS?)*(VBD?G?N?P?Z?)(RBD?)'
-        self.patterns = [self.np,self.pn,self.vb,self.jj,self.vp]
+        self.np = r'(NN|NNS)+'
+        self.pn = r'(NNP|NNPS)+'
+        #self.vb = r'(VB|VBD|VBG|VBN|VBP|VBZ)'
+        #self.jj = r'JJR?S?'
+        #self.vp = r'(IN)?(RBS?)*(VBD?G?N?P?Z?)(RBD?)'
+        self.patterns = [self.np,self.pn]
+        self.unacceptable =  ["CC", "RB", "RBR", "RBS", "DT", "PDT", "PRP", "PRP$", "WP", "WP$", "IN"]
+        
+
     def allPOS(self):
         return self.patterns
 
 
-def yakeKeywords(KE,str):
+def yakeKeywords(str,sl):
+    
     strArr = str.split("\n")
     allKeywords = []
     for entry in strArr:
-        toAppend = KE.extract_keywords(entry)
+        KE = pke.unsupervised.YAKE()
+        KE.load_document(str, language = 'en', normalization=None,stoplist=sl)
+        KE.candidate_selection(n=3)
+        KE.candidate_weighting(window=4,use_stems=True)
+        toAppend = KE.get_n_best(n=30, threshold=0.4)
+        
         allKeywords.append(toAppend)
 
 
@@ -52,24 +66,32 @@ Only one word for each concept
     """
     tokens = nltk.word_tokenize(wp)
     tagged_tokens = nltk.pos_tag(tokens)
-    tags = ""
+    tags = []
     keys = key()
     all = keys.allPOS()
     for item in tagged_tokens:
-        tags +=item[1]
-        for k in all:
-            pattern = re.compile(k)
-            if pattern.match(tags):
-                return item
+        tags.append(item[1])
+    for i in range(len(tags)):
+        if tagged_tokens[i][1] in keys.unacceptable:
+            return None
+  
+        
+    
+    tagString = "".join([tag for tag in tags])
+    for k in all:
+        pattern = re.compile(k)
+        if pattern.match(tagString):
+            return item
     return None
 
     
 
-
+"""
     
-def yakeRanking (w2v,KE, allText):
+def yakeRanking (w2v, allText,sl):
     
-    yakekeys = np.array(yakeKeywords(KE,allText),dtype = object)
+    yakekeys = np.array(yakeKeywords(allText,sl),dtype = object)
+    
     flat = [item for sublist in yakekeys for item in sublist]
     rank = sorted(flat,key = lambda x:x[1])
     kw = {}
@@ -79,7 +101,7 @@ def yakeRanking (w2v,KE, allText):
    # print(rank[:500])
     i=0
     rankNum =0
-    while i<100 and rankNum<len(rank):
+    while rankNum<len(rank):
         p=rank[rankNum]
         if isValid(p[0]):
             kw[p[0]]=p[1]
@@ -106,7 +128,7 @@ def yakeRanking (w2v,KE, allText):
 
 
                     orig = w2vSims[i]
-                    w2vSims[i] = orig+product
+                    w2vSims[i] = orig+(kw[i] * 0.4) + (product * 0.6) 
                 else:
                     product = 0
                     indivWordsi = i.split()
@@ -119,36 +141,110 @@ def yakeRanking (w2v,KE, allText):
                                 product += w2v.wv.similarity(wordi,wordj)
                             else:
                                 continue
-                    w2vSims[i]=product*kw[i]
+                    w2vSims[i] = (kw[i] * 0.4) + (product * 0.6) 
     rankwtv = sorted(w2vSims.items(), key=lambda x: x[1], reverse = True)
     print(rankwtv)
     return rankwtv
 
+"""
+def yakeRanking (w2v, allText,sl):
+    
+    yakekeys = np.array(yakeKeywords(allText,sl),dtype = object)
+    flat = [item for sublist in yakekeys for item in sublist]
+    rank = sorted(flat,key = lambda x:x[1])
+    kw = {}
+    w2vSims = {}
+    indexArr = []
+    
+   # print(rank[:500])
+    i=0
+    rankNum =0
+    maxScore = float(rank[0][1])
+    while rankNum<len(rank):
+        p=rank[rankNum]
+        if isValid(p[0]):
+            kw[p[0]]=p[1]
+            indexArr.append(p[0])
+            if float(p[1])>maxScore:
+                maxScore = p[1]
+            i+=1
+        rankNum+=1
+
+    et = electionTerms.electionTerms
+
+
+    for key in indexArr:
+        indivwords = key.split()
+        similarity = 0
+        for word in indivwords:
+            for term in et:
+                if term in w2v.wv.key_to_index and word in w2v.wv.key_to_index:
+                    similarity += w2v.wv.similarity(word,term)
+        w2vSims[key]=kw[key]+maxScore*similarity
+    print(w2vSims)
+    rankwtv = sorted(w2vSims.items(), key=lambda x: x[1], reverse = True)
+    return rankwtv
+        
 
 
 
 def main():
     #extractor = pke.unsupervised.YAKE()
     allText = dc.cleantext('../corpuses/training.txt')
+    allText = allText.lower()
     sentences = dc.splitLines(allText)
     sw = set(stopwords.words('english'))
     news_stopwords = set([
     "breaking", "news", "journal", "times", "post", "herald", "gazette", 
     "daily", "weekly", "monthly", "article", "editorial", "press", "media", 
     "report", "reporting", "publication", "columnist", "coverage", "network", 
-    "wire", "agency", "source", "sources", "headline", "reuters", "associated", 
-    "ap", "nytimes", "cnn", "bbc", "fox", "npr", "bloomberg", "politico", 
-    "wsj", "guardian", "telegraph", "tribune"])
-    combinedStopwords = sw.union(news_stopwords)
+    "wire", "agency", "source", "sources", "headline", "reuters","NBC", "associated", "follow", "NBCfollow","subscribe","like","comment",
+    "ap", "nytimes", "cnn", "bbc", "fox", "npr", "bloomberg", "politico", "marie claire"
+    "wsj", "guardian", "telegraph", "tribune","magazine","'re"])
+    custom_stopwords = set([
+    "'re", "'ve", "'ll", "'d", "'m", "'s", "n't", 
+    'a', 'an', 'the',            
+    'and', 'or', 'but', 'if', 'while', 'because',
+    'to', 'of', 'in', 'on', 'at', 'with', 'by', 
+    'he', 'she', 'it', 'they', 'we', 'you', 'i',
+    'is', 'was', 'were', 'be', 'been', 'are', 
+    'that', 'this', 'there', 'here'
+    "is", "was", "are", "were", "am", "be", "been", "being",
+    "can", "could", "shall", "should", "will", "would", "may", "might", "must",
+    "do", "does", "did", "have", "has", "had", "get", "got", "make", "made",
+    "take", "took", "go", "went", "come", "came", "say", "said", "see", "saw",
+    "seen", "know", "knew", "known", "think", "thought", "tell", "told", "find",
+    "found", "give", "given", "work", "worked", "use", "used", "try", "trying",
+    "start", "starting", "begin", "beginning", "end", "ending", "ask", "asking",
+    "keep", "keeping", "let", "letting", "help", "helping", "need", "needing",
+    "want", "wanting", "like", "liking", "love", "loving", "hate", "hating",
+    "seem", "seems", "seemed", "appear", "appears", "appeared", "become",
+    "became", "look", "looks", "looked", "feel", "feels", "felt", "sound",
+    "sounds", "sounded"])
+
+    combinedStopwords = sw.union(news_stopwords).union(custom_stopwords)
+    for i in range(len(sentences)):
+        sentences[i] = remove_stopwords(s=sentences[i], stopwords=combinedStopwords)
+        
     sentences = [line.translate(str.maketrans('', '', string.punctuation)).split() for line in sentences]
+
     w2v = Word2Vec(sentences = sentences)
-    KE = KeywordExtractor(stopwords=combinedStopwords)
+
+
+
+
+
+
+    #KE = KeywordExtractor(stopwords=combinedStopwords,windowsSize=2, dedupLim=  0.5, top = 25,n=3)
+    
+
     allIndivArticles = dc.cleanIndivArticle('../corpuses/test.txt')
-    with open('../results/results2.txt',"w") as outp:
+    with open('../results/results.txt',"w",encoding = 'utf-8') as outp:
         for i in range(len(allIndivArticles)):
             outp.write(f'\n article {i+1}:\n')
-            rankwtv = yakeRanking(w2v,KE, allIndivArticles[i])
-            for elem in rankwtv:
+            rankwtv = yakeRanking(w2v, allIndivArticles[i],combinedStopwords)
+            for i in range(15):
+                elem = rankwtv[i]
                 outp.write(f'{elem[0]}: {elem[1]}\n')
         
 

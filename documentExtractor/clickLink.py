@@ -6,7 +6,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 from fake_useragent import UserAgent
-
+from bs4 import BeautifulSoup
+import requests
 
 #https://news.google.com/read/CBMixAFBVV95cUxQRXFWNXFmRG9RMUJFUXpROWs1S1FwQW4ybVA1UXVMb0h4bEItYVhyWHJhcklGYkJiZWlsVDNUT3hKZ1NwcGUtYXJBY1ZraURKcFZCaGp2cG85SlJFM29YRHVpMEdhUTFpZV96TWFES3lxdWJsT1lHcERWSnZHaENaS29Wc0xscUJqTFFrYzFTRXFKMUFaREoyd1gya2pRcjlKSHNQYnFfRXdZWDExbHF6UGFMZlJCN3E1YlNXOWNzVlRqc0lH?hl=en-US&gl=US&ceid=US%3Aen
 
@@ -51,9 +52,9 @@ def scrapeLinks(link):
             #print(element)
             if element:
                 return element
-            driver.quit()
+            
+        
     except:
         pass
         return None
 
-2

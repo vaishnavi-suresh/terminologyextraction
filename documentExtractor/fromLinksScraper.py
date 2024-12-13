@@ -35,7 +35,7 @@ for thread in Threads:
 
 
 print('everthing alert!!!!')
-with open('../corpuses/test.txt','w', encoding='utf-8') as outp:
+with open('../corpuses/test2.txt','w', encoding='utf-8') as outp:
     for key,value in allContent.items():
         print(f'{key} {value}')
         outp.write(f'HEADER: {key}\n\n')
