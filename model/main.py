@@ -1,11 +1,3 @@
-"""
-1. Create a function that tags the words in the cleaned data. 
-2. Use CBOW from word2vec library to compute word embeddings - pip
-3. use YAKE to extract yake keywords 
-4. for each YAKE keyword, split each of the top 1000 keywords into adjectives and nouns. Place them into a list
-5. TBD on implementation, use the word2vec graph to get the words closest in distance. Return top 20
-TO DO: remove stopwords
-"""
 
 from gensim.models import Word2Vec
 from gensim.parsing.preprocessing import remove_stopwords
@@ -54,16 +46,6 @@ def yakeKeywords(str,sl):
     return allKeywords
 
 def isValid (wp):
-    """
-    Get 5 -15 keywords from the test, based on the following requirements
-Up to  consecutive words unless long proper noun
-No more than one entity
-Noun phrase, proper name, verb, adj, phrasal verb, or part of clause
-No full sentences, conjunctions, adverbs, determiner, number, preposition, or pronoun
-No base form
-Only one word for each concept
-
-    """
     tokens = nltk.word_tokenize(wp)
     tagged_tokens = nltk.pos_tag(tokens)
     tags = []
