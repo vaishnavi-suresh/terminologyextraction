@@ -84,69 +84,7 @@ Only one word for each concept
             return item
     return None
 
-    
 
-"""
-    
-def yakeRanking (w2v, allText,sl):
-    
-    yakekeys = np.array(yakeKeywords(allText,sl),dtype = object)
-    
-    flat = [item for sublist in yakekeys for item in sublist]
-    rank = sorted(flat,key = lambda x:x[1])
-    kw = {}
-    w2vSims = {}
-    indexArr = []
-    
-   # print(rank[:500])
-    i=0
-    rankNum =0
-    while rankNum<len(rank):
-        p=rank[rankNum]
-        if isValid(p[0]):
-            kw[p[0]]=p[1]
-            indexArr.append(p[0])
-            i+=1
-        rankNum+=1
-    for i in indexArr:
-        for j in indexArr:
-            if i==j:
-                continue
-            else:
-                if i in w2vSims.keys():
-                    product = 0
-                    indivWordsi = i.split()
-                    indivwordsj = j.split()
-                    for wordi in indivWordsi:
-                        for wordj in indivwordsj:
-                            if wordi == wordj: 
-                                continue
-                            elif wordi in w2v.wv.key_to_index and wordj in w2v.wv.key_to_index:
-                                product += w2v.wv.similarity(wordi,wordj)
-                            else:
-                                continue
-
-
-                    orig = w2vSims[i]
-                    w2vSims[i] = orig+(kw[i] * 0.4) + (product * 0.6) 
-                else:
-                    product = 0
-                    indivWordsi = i.split()
-                    indivwordsj = j.split()
-                    for wordi in indivWordsi:
-                        for wordj in indivwordsj:
-                            if wordi == wordj:
-                                continue
-                            elif wordi in w2v.wv.key_to_index and wordj in w2v.wv.key_to_index:
-                                product += w2v.wv.similarity(wordi,wordj)
-                            else:
-                                continue
-                    w2vSims[i] = (kw[i] * 0.4) + (product * 0.6) 
-    rankwtv = sorted(w2vSims.items(), key=lambda x: x[1], reverse = True)
-    print(rankwtv)
-    return rankwtv
-
-"""
 def yakeRanking (w2v, allText,sl):
     
     yakekeys = np.array(yakeKeywords(allText,sl),dtype = object)
