@@ -44,9 +44,9 @@ def yakeKeywords(str,sl):
     for entry in strArr:
         KE = pke.unsupervised.YAKE()
         KE.load_document(str, language = 'en', normalization=None,stoplist=sl)
-        KE.candidate_selection(n=5)
-        KE.candidate_weighting(window=5,use_stems=False)
-        toAppend = KE.get_n_best(n=20, threshold=0.6)
+        KE.candidate_selection(n=10)
+        KE.candidate_weighting(window=4,use_stems=False)
+        toAppend = KE.get_n_best(n=20, threshold=0.5)
         
         allKeywords.append(toAppend)
 
@@ -180,7 +180,7 @@ def yakeRanking (w2v, allText,sl):
             for term in et:
                 if term in w2v.wv.key_to_index and word in w2v.wv.key_to_index:
                     similarity += w2v.wv.similarity(word,term)
-        w2vSims[key]=kw[key]+maxScore*1.5*similarity
+        w2vSims[key]=kw[key]+maxScore*similarity
     print(w2vSims)
     rankwtv = sorted(w2vSims.items(), key=lambda x: x[1], reverse = True)
     return rankwtv
@@ -198,7 +198,7 @@ def main():
     "breaking", "news", "journal", "times", "post", "herald", "gazette", 
     "daily", "weekly", "monthly", "article", "editorial", "press", "media", 
     "report", "reporting", "publication", "columnist", "coverage", "network", 
-    "wire", "agency", "source", "sources", "headline", "reuters","NBC", "associated", "follow", "NBCfollow","subscribe","like","comment",
+    "wire", "agency", "source", "sources", "headline", "reuters","nbc", "associated", "follow", "nbcfollow","subscribe","like","comment",
     "ap", "nytimes", "cnn", "bbc", "fox", "npr", "bloomberg", "politico", "marie claire"
     "wsj", "guardian", "telegraph", "tribune","magazine","'re"])
     custom_stopwords = set([
@@ -243,9 +243,10 @@ def main():
         for i in range(len(allIndivArticles)):
             outp.write(f'\n article {i+1}:\n')
             rankwtv = yakeRanking(w2v, allIndivArticles[i],combinedStopwords)
-            for i in range(len(rankwtv)):
-                elem = rankwtv[i]
-                outp.write(f'{elem[0]}: {elem[1]}\n')
+            for i in range(15):
+                if i<len(rankwtv):
+                    elem = rankwtv[i]
+                    outp.write(f'{elem[0]}: {elem[1]}\n')
         
 
     
