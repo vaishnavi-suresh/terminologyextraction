@@ -38,7 +38,7 @@ def yakeKeywords(str,sl):
         KE.load_document(str, language = 'en', normalization=None,stoplist=sl)
         KE.candidate_selection(n=8)
         KE.candidate_weighting(window=4,use_stems=False)
-        toAppend = KE.get_n_best(n=50, threshold=0.45)
+        toAppend = KE.get_n_best(n=30, threshold=0.5)
         
         allKeywords.append(toAppend)
 
@@ -76,7 +76,6 @@ def yakeRanking (w2v, allText,sl):
     w2vSims = {}
     indexArr = []
     
-   # print(rank[:500])
     i=0
     rankNum =0
     min = float(rank[0][1]) if rank else 1.0
