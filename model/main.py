@@ -44,9 +44,9 @@ def yakeKeywords(str,sl):
     for entry in strArr:
         KE = pke.unsupervised.YAKE()
         KE.load_document(str, language = 'en', normalization=None,stoplist=sl)
-        KE.candidate_selection(n=10)
+        KE.candidate_selection(n=8)
         KE.candidate_weighting(window=4,use_stems=False)
-        toAppend = KE.get_n_best(n=20, threshold=0.5)
+        toAppend = KE.get_n_best(n=50, threshold=0.45)
         
         allKeywords.append(toAppend)
 
@@ -97,14 +97,14 @@ def yakeRanking (w2v, allText,sl):
    # print(rank[:500])
     i=0
     rankNum =0
-    maxScore = float(rank[0][1]) if rank else 1.0
+    min = float(rank[0][1]) if rank else 1.0
     while rankNum<len(rank):
         p=rank[rankNum]
         if isValid(p[0]):
             kw[p[0]]=p[1]
             indexArr.append(p[0])
-            if float(p[1])>maxScore:
-                maxScore = p[1]
+            if float(p[1])<min:
+                min = p[1]
             i+=1
         rankNum+=1
 
@@ -113,14 +113,18 @@ def yakeRanking (w2v, allText,sl):
 
     for key in indexArr:
         indivwords = key.split()
-        similarity = 0.1
+
+
+        similarity = 0.001
         for word in indivwords:
             for term in et:
                 if term in w2v.wv.key_to_index and word in w2v.wv.key_to_index:
-                    similarity += w2v.wv.similarity(word,term)
-        w2vSims[key]=kw[key]+maxScore*similarity
+                    similarity *= (w2v.wv.similarity(word,term)+0.001)
+        print(similarity)
+        print(min)
+        w2vSims[key]=1/(kw[key]+0.001)+20*similarity/(min+0.001)
     print(w2vSims)
-    rankwtv = sorted(w2vSims.items(), key=lambda x: x[1], reverse = True)
+    rankwtv = sorted(w2vSims.items(), key=lambda x: x[1],reverse=True)
     return rankwtv
         
 
@@ -166,7 +170,7 @@ def main():
         
     sentences = [line.translate(str.maketrans('', '', string.punctuation)).split() for line in sentences]
 
-    w2v = Word2Vec(sentences = sentences, vector_size=25,window=5,min_count=2,sg=0)
+    w2v = Word2Vec(sentences = sentences, vector_size=100,window=5,min_count=5,sg=0)
 
 
 

@@ -86,7 +86,7 @@ def main():
     allPrecision = 0
     allRecall = 0
     allFScore = 0
-    with open('../results/metrics2.txt','w', encoding='utf-8') as metrics:
+    with open('../results/metrics.txt','w', encoding='utf-8') as metrics:
         for i in range(len(truthWords)):
             
             truthArr = truthWords[i]
