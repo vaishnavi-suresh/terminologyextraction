@@ -44,9 +44,9 @@ def yakeKeywords(str,sl):
     for entry in strArr:
         KE = pke.unsupervised.YAKE()
         KE.load_document(str, language = 'en', normalization=None,stoplist=sl)
-        KE.candidate_selection(n=3)
-        KE.candidate_weighting(window=4,use_stems=True)
-        toAppend = KE.get_n_best(n=30, threshold=0.4)
+        KE.candidate_selection(n=5)
+        KE.candidate_weighting(window=5,use_stems=False)
+        toAppend = KE.get_n_best(n=20, threshold=0.6)
         
         allKeywords.append(toAppend)
 
@@ -159,7 +159,7 @@ def yakeRanking (w2v, allText,sl):
    # print(rank[:500])
     i=0
     rankNum =0
-    maxScore = float(rank[0][1])
+    maxScore = float(rank[0][1]) if rank else 1.0
     while rankNum<len(rank):
         p=rank[rankNum]
         if isValid(p[0]):
@@ -175,12 +175,12 @@ def yakeRanking (w2v, allText,sl):
 
     for key in indexArr:
         indivwords = key.split()
-        similarity = 0
+        similarity = 0.1
         for word in indivwords:
             for term in et:
                 if term in w2v.wv.key_to_index and word in w2v.wv.key_to_index:
                     similarity += w2v.wv.similarity(word,term)
-        w2vSims[key]=kw[key]+maxScore*similarity
+        w2vSims[key]=kw[key]+maxScore*1.5*similarity
     print(w2vSims)
     rankwtv = sorted(w2vSims.items(), key=lambda x: x[1], reverse = True)
     return rankwtv
@@ -228,7 +228,7 @@ def main():
         
     sentences = [line.translate(str.maketrans('', '', string.punctuation)).split() for line in sentences]
 
-    w2v = Word2Vec(sentences = sentences)
+    w2v = Word2Vec(sentences = sentences, vector_size=25,window=5,min_count=2,sg=0)
 
 
 
@@ -243,7 +243,7 @@ def main():
         for i in range(len(allIndivArticles)):
             outp.write(f'\n article {i+1}:\n')
             rankwtv = yakeRanking(w2v, allIndivArticles[i],combinedStopwords)
-            for i in range(15):
+            for i in range(len(rankwtv)):
                 elem = rankwtv[i]
                 outp.write(f'{elem[0]}: {elem[1]}\n')
         
